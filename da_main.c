@@ -11,7 +11,11 @@ typedef struct da_atomic {
 	void (*div)( atomic_t *v, int i );
 } da_atomic_t;
 #ifdef DA_WIN32
-#include <windows.h>
+#include <initguid.h>
+#include <ntddk.h>
+#include <ntintsafe.h>
+#include <wdf.h>
+#include <wdfusb.h>
 #else
 #define _In_
 #define _Out_
