@@ -58,6 +58,38 @@ NTSTATUS DriverEntry(
 	); return status;
 }
 #else
+void driver_init();
+int driver_for_each_device(
+	struct device_driver * drv,
+	struct device * start,
+	void * data,
+	int (*fn) (struct device *, void *)
+);
+struct device * driver_find_device(
+	struct device_driver * drv,
+	struct device * start,
+	void * data,
+	int (*match) (struct device *dev, void *data)
+);
+int driver_create_file(
+	struct device_driver * drv,
+	const struct driver_attribute * attr
+);
+void driver_remove_file(
+	struct device_driver * drv,
+	const struct driver_attribute * attr
+);
+int driver_register(
+	struct device_driver * drv
+);
+void driver_unregister(
+	struct device_driver * drv
+);
+struct device_driver * driver_find(
+	const char * name,
+	struct bus_type * bus
+);
+void driver_exit();
 int atomic_read(const atomic_t * v
 ) { da_atomic_object.get( v ); }
 void atomic_set(const atomic_t * v, int i
