@@ -18,4 +18,4 @@ will be filling in as and when I feel like it, with any luck the
 various distro developers will realise the importance of such an API
 and begin helping out and the knock on affect will be the final nail
 in M$'s self made casket as gaming companies begin to take advantage
-of this API to do their 3D acceleration stuff (e.g Sony's FFXV).
+of this API to do their 3D acceleration stuff (e.g SE's FFXV).
