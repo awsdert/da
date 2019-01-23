@@ -36,8 +36,8 @@ int daitos( char *dst, size_t size, idam_t val, size_t base, bool small ) {
 }
 int dasncat( char *dst, const char *src, size_t size, char **end ) {
 	char *e = strncat( dst, src, size );
-	int result = e ? errno : 0;
-	if ( !e ) seterrno( 0 );
+	int result = e ? 0 : errno;
+	if ( !e ) errno = 0;
 	if ( end ) *end = e;
 	return result;
 }
