@@ -28,8 +28,9 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=0
-FILE_NAME_0=1198;C;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda_main.c;0;4
+current_page=1
+FILE_NAME_0=925;C;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda_main.c;0;4
+FILE_NAME_1=1801;C++;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda%2Fdas.h;0;4
 
 [VTE]
 last_dir=/home/zxuiji
