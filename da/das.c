@@ -83,7 +83,7 @@ int _dasnprintfv_getarg(
 	else if (dasmatch(f.text,"z",len)==1) f->info = DAFORMAT_Z;
 	else f->info = 0;
 	switch ( f.type ) {
-	case 'i': case 'd':
+	case 'i': case 'd': case 'c':
 		if (f->info == DAFORMAT_C)
 			imax = *(va_arg( list, idac_t * ));
 		else if (f->info == DAFORMAT_S)
@@ -129,6 +129,16 @@ int _dasnprintfv_getarg(
 		break;
 	}
 	switch ( f.type ) {
+	case 'c':
+		if ( !dst ) return 1;
+		if (imax <= UCHAR_MAX && size) *((udac_t*)dst) = (udac_t)imax;
+		else if (imax <= WCHAR_MAX && imax >= WCHAR_MIN && size >= sizeof(wchar_t))
+			wctomb( dst, (wchar_t)imax );
+		else if (imax <= INT_MAX && imax >= INT_MIN && size >= sizeof(int))
+			/* Is this the right way to do it? */
+			*((int*)dst) = (int)imax;
+		else return 1;
+		break;
 	case 'B': result = dasncat( dst, bval ? "true" : "false", NULL );
 		break;
 	case 'i':

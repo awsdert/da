@@ -28,9 +28,12 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=1
+current_page=4
 FILE_NAME_0=925;C;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda_main.c;0;4
-FILE_NAME_1=1801;C++;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda%2Fdas.h;0;4
+FILE_NAME_1=237;C++;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda%2Fdas.h;0;4
+FILE_NAME_2=1340;C;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda%2Fdas.c;0;4
+FILE_NAME_3=1992;C++;0;EUTF-8;1;1;0;%2Fmedia%2Fzxuiji%2FZXUIJI_1TB%2Fgithub%2Fda%2Fda%2Fida.h;0;4
+FILE_NAME_4=405;Python;0;EUTF-8;1;1;0;%2Fmedia%2FAPPS%2FSteamLibrary%2Fsteamapps%2Fcommon%2FProton%203.16%20Beta%2Fuser_settings.py;0;4
 
 [VTE]
 last_dir=/home/zxuiji
