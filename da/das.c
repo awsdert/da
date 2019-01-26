@@ -134,9 +134,11 @@ int _dasnprintfv_getarg(
 		if (imax <= UCHAR_MAX && size) *((udac_t*)dst) = (udac_t)imax;
 		else if (imax <= WCHAR_MAX && imax >= WCHAR_MIN && size >= sizeof(wchar_t))
 			wctomb( dst, (wchar_t)imax );
+#if WCHAR_MAX == SHRT_MAX
 		else if (imax <= INT_MAX && imax >= INT_MIN && size >= sizeof(int))
 			/* Is this the right way to do it? */
 			*((int*)dst) = (int)imax;
+#endif
 		else return 1;
 		break;
 	case 'B': result = dasncat( dst, bval ? "true" : "false", NULL );
