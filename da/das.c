@@ -44,24 +44,19 @@ int dasncat( char *dst, const char *src, size_t size, char **end ) {
 int dalctomb( char *dst, size_t size, long c, size_t *bytes ) {
 static long endian = 0x01234567L;
 static char *ec = (char*)&endian;
-	size_t cb = 1;
+	size_t cb = sizeof(wchar_t) + 2;
 	int i, j, add;
 	void *vc = &c;
 	char *pc = (char*)vc;
 	if ( c < 0 ) goto dalctomb_range;
-	if ( c <= UCHAR_MAX ) {
-		*dst = *pc;
-		goto dalctomb_done;
-	}
-	cb = sizeof(wchar_t) + 2;
-	if ( size < sizeof(wchar_t) + 2 ) goto dalctomb_size;
+	if ( size < cb ) goto dalctomb_size;
 	if ( c <= WCHAR_MAX ) {
 		wctomb( dst, *((wchar_t*)vc) );
 		goto dalctomb_done;
 	}
 #if WCHAR_MAX == SHRT_MAX
 	cb = sizeof(long) + 2;
-	if ( size < 6 ) goto dalctomb_size;
+	if ( size < cb ) goto dalctomb_size;
 	if ( c <= 0x10FFFF ) {
 		switch ( *ec ) {
 		case 0x01: i = 3; j = 1; add = -1; break;
