@@ -41,6 +41,52 @@ int dasncat( char *dst, const char *src, size_t size, char **end ) {
 	if ( end ) *end = e;
 	return result;
 }
+int dalctomb( char *dst, size_t size, long c, size_t *bytes ) {
+static long endian = 0x01234567L;
+static char *ec = (char*)&endian;
+	size_t cb = 1;
+	int i, j, add;
+	void *vc = &c;
+	char *pc = (char*)vc;
+	if ( c < 0 ) goto dalctomb_range;
+	if ( c <= UCHAR_MAX ) {
+		*dst = *pc;
+		goto dalctomb_done;
+	}
+	cb = sizeof(wchar_t) + 2;
+	if ( size < sizeof(wchar_t) + 2 ) goto dalctomb_size;
+	if ( c <= WCHAR_MAX ) {
+		wctomb( dst, *((wchar_t*)vc) );
+		goto dalctomb_done;
+	}
+#if WCHAR_MAX == SHRT_MAX
+	cb = sizeof(long) + 2;
+	if ( size < 6 ) goto dalctomb_size;
+	if ( c <= 0x10FFFF ) {
+		switch ( *ec ) {
+		case 0x01: i = 3; j = 1; add = -1; break;
+		case 0x23: i = 2; j = 0; add = 1; break;
+		case 0x45: i = 1; j = 3; add = -1; break;
+		case 0x67: i = 0; j = 2; add = 1; break;
+		/* Just in case */
+		default: goto dalctomb_fail;
+		}
+		dst[3] = pc[i];
+		dst[2] = pc[i + add];
+		dst[1] = pc[j];
+		*dst = 0220;
+	}
+#endif
+	switch ( 0 ) {
+	case ESIZE: dalctomb_size: i = ESIZE; break;
+	case ERANGE: dalctomb_range: i = ERANGE; break;
+	case EPARAM: dalctomb_param: i = EPARAM; break;
+	case 1: dalctomb_fail: i = 1; break;
+	default: dalctomb_done: i = 0;
+	}
+	if ( bytes ) *bytes = (i == 0) ? cb : 0;
+	return i;
+}
 int dasmatch( const char *str, const char *txt, size_t max ) {
 	size_t i = 0, len = strlen(txt);
 	for ( ; *str && *txt && i < max; ++i ) {
@@ -72,7 +118,7 @@ int _dasnprintfv_getarg(
 	daformat_t *f, 
 	va_list list
 ) {
-	size_t len = strlen(f.text);
+	size_t len = strlen(f.text), cb;
 	int result = 0;
 	if (dasmatch(f.text,"c",len)==1) f->info = DAFORMAT_C;
 	else if (dasmatch(f.text,"s",len)==1) f->info = DAFORMAT_S;
@@ -130,16 +176,8 @@ int _dasnprintfv_getarg(
 	}
 	switch ( f.type ) {
 	case 'c':
-		if ( !dst ) return 1;
-		if (imax <= UCHAR_MAX && size) *((udac_t*)dst) = (udac_t)imax;
-		else if (imax <= WCHAR_MAX && imax >= WCHAR_MIN && size >= sizeof(wchar_t))
-			wctomb( dst, (wchar_t)imax );
-#if WCHAR_MAX == SHRT_MAX
-		else if (imax <= INT_MAX && imax >= INT_MIN && size >= sizeof(int))
-			/* Is this the right way to do it? */
-			*((int*)dst) = (int)imax;
-#endif
-		else return 1;
+		if ( imax < LONG_MIN || imax > LONG_MAX ) return ERANGE;
+		result = dalctomb( dst, size, (long)imax, done );
 		break;
 	case 'B': result = dasncat( dst, bval ? "true" : "false", NULL );
 		break;
