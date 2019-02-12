@@ -1,0 +1,1 @@
+Lu.system('cd ../ && lu')

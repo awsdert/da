@@ -17,21 +17,21 @@ int dasncat(
 	char **end
 );
 int daftoa(
-	char *dst.
+	char *dst,
 	size_t size,
 	idam_t val,
 	size_t base,
 	bool small
 );
 int dautoa(
-	char *dst.
+	char *dst,
 	size_t size,
 	udam_t val,
 	size_t base,
 	bool small
 );
 int daitoa(
-	char *dst.
+	char *dst,
 	size_t size,
 	intmax_t val,
 	size_t base,

@@ -1,6 +1,6 @@
 #include <stdarg.h>
 #include <err.h>
-#include <types.h>
+#include <sys/types.h>
 static char dabase_large[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 static char dabase_small[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 int dautos( char *dst, size_t size, udam_t val, size_t base, bool small ) {

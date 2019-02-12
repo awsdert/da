@@ -4,7 +4,7 @@
 #include <float.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <types.h>
+#include <sys/types.h>
 #if defined( LDBL_MAX )
 #define FDAM long double
 #define _FDAM LDBL
