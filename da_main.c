@@ -9,14 +9,18 @@ NTSTATUS DriverEntry(
 }
 #else
 da_t da = {0};
-wchar_t *reg = DA_REG;
+#define DA__TOSTR(VAL) #VAL
+#define DA_TOSTR(VAL) DA__TOSTR(VAL)
+#define DA__TOWCS(VAL) L###VAL
+#define DA_TOWCS(VAL) DA__TOWCS(VAL)
+wchar_t *reg = DA_TOWCS(DA_REG);
 static int __init insert_mod(void)
 {
-	if ( da_entry( &da, &reg ) == EXIT_SUCCESS ) {
+	if ( da_entry( &da, &reg ) == 0 ) {
 		printk("da driver loaded");
-		return EXIT_SUCCESS;
+		return 0;
 	} printk("da driver failed to load");
-	return EXIT_FAILURE;
+	return 1;
 }
 static void __exit remove_mod(void)
 {

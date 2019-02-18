@@ -95,4 +95,71 @@
 #define DA_OS_MSWIN DA_OS_WINNT
 #endif
 
+#ifdef __LLP64__
+#define DA_OS_LLP64 __LLP64__
+#elif defined( __LLP64 )
+#define DA_OS_LLP64 __LLP64
+#elif defined( _LLP64_ )
+#define DA_OS_LLP64 _LLP64_
+#elif defined( _LLP64 )
+#define DA_OS_LLP64 _LLP64
+#elif defined( LLP64 )
+#define DA_OS_LLP64 LLP64
+#elif defined( DA_OS_WIN64 )
+#define DA_OS_LLP64 DA_OS_WIN64
+#endif
+
+#ifdef __LP64__
+#define DA_OS_LP64 __LP64__
+#elif defined( __LP64 )
+#define DA_OS_LP64 __LP64
+#elif defined( _LP64_ )
+#define DA_OS_LP64 _LP64_
+#elif defined( _LP64 )
+#define DA_OS_LP64 _LP64
+#elif defined( LP64 )
+#define DA_OS_LP64 LP64
+#endif
+
+#ifdef __ILP64__
+#define DA_OS_ILP64 __ILP64__
+#elif defined( __ILP64 )
+#define DA_OS_ILP64 __ILP64
+#elif defined( _ILP64_ )
+#define DA_OS_ILP64 _ILP64_
+#elif defined( _ILP64 )
+#define DA_OS_ILP64 _ILP64
+#elif defined( ILP64 )
+#define DA_OS_ILP64 ILP64
+#message "DWORD is 64bit on ILP64"
+#endif
+
+#ifdef __LP32__
+#define DA_OS_LP32 __LP32__
+#elif defined( __LP32 )
+#define DA_OS_LP32 __LP32
+#elif defined( _LP32_ )
+#define DA_OS_LP32 _LP32_
+#elif defined( _LP32 )
+#define DA_OS_LP32 _LP32
+#elif defined( LP32 )
+#define DA_OS_LP32 LP32
+#elif defined( DA_OS_WIN16 )
+#define DA_OS_LP32 DA_OS_WIN16
+#endif
+
+#ifdef __ILP32__
+#define DA_OS_ILP32 __ILP32__
+#elif defined( __ILP32 )
+#define DA_OS_ILP32 __ILP32
+#elif defined( _ILP32_ )
+#define DA_OS_ILP32 _ILP32_
+#elif defined( _ILP32 )
+#define DA_OS_ILP32 _ILP32
+#elif defined( ILP32 )
+#define DA_OS_ILP32 ILP32
+#elif defined( DA_OS_WIN32 ) && !defined( DA_OS_WIN64 )
+#define DA_OS_ILP32 DA_OS_WIN32
+#endif
+
 #endif

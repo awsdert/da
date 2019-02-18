@@ -1,4 +1,4 @@
-#define DA_REG "da/test"
+#include "da/da.h"
 DA_LICENSE("MIT")
 DA_AUTHOR("da and gb2985@gmail.com")
 DA_DESCRIPTION("da (driver api) test")

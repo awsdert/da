@@ -1,12 +1,10 @@
-#include <stdarg.h>
-#include <err.h>
-#include <sys/types.h>
-static char dabase_large[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-static char dabase_small[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-int dautos( char *dst, size_t size, udam_t val, size_t base, bool small ) {
-	char *txt = small ? base_small : base_large;
+#include "das.h"
+static const CDAC dabase_large[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+static const CDAC dabase_small[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+int dautos( CDAC *dst, size_t size, udam_t val, size_t base, bool small ) {
+	const CDAC *txt = small ? dabase_small : dabase_large;
 	size_t i = 0, len = size - 1;
-	char *tmp = &dst[len];
+	CDAC *tmp = &dst[len];
 	if ( base < 2 || base > strlen(txt) ) goto dautos_range;
 	for ( ; val > 0 && tmp >= dst; --tmp ) {
 		*tmp = txt[val % base];
@@ -25,68 +23,92 @@ int dautos( char *dst, size_t size, udam_t val, size_t base, bool small ) {
 	memset( dst, 0, size );
 	return ENOMEM;
 }
-int daitos( char *dst, size_t size, idam_t val, size_t base, bool small ) {
+int daitos( CDAC *dst, size_t size, idam_t val, size_t base, bool small ) {
 	if ( val < 0 ) {
 		*dst = '-';
 		++dst; --size;
 		return ( val == INTMAX_MIN )
-			? dautos( tmp, size, val, base, small )
-			: dautos( tmp, size, -val, base, small );
+			? dautos( dst, size, val, base, small )
+			: dautos( dst, size, -val, base, small );
 	} return dautos( dst, size, val, base, small );
 }
-int dasncat( char *dst, const char *src, size_t size, char **end ) {
-	char *e = strncat( dst, src, size );
+int dasncat( CDAC *dst, const CDAC *src, size_t size, CDAC **end ) {
+	CDAC *e = strncat( dst, src, size );
 	int result = e ? 0 : errno;
 	if ( !e ) errno = 0;
 	if ( end ) *end = e;
 	return result;
 }
-int dalctomb( char *dst, size_t size, long c, size_t *bytes ) {
-static long endian = 0x01234567L;
-static char *ec = (char*)&endian;
-	size_t cb = sizeof(wchar_t) + 2;
-	int i, j, add;
-	void *vc = &c;
-	char *pc = (char*)vc;
-	if ( c < 0 ) goto dalctomb_range;
-	if ( size < cb ) goto dalctomb_size;
-	if ( c <= WCHAR_MAX ) {
-		wctomb( dst, *((wchar_t*)vc) );
-		goto dalctomb_done;
-	}
-#if WCHAR_MAX == SHRT_MAX
-	cb = sizeof(long) + 2;
-	if ( size < cb ) goto dalctomb_size;
-	if ( c <= 0x10FFFF ) {
-		switch ( *ec ) {
-		case 0x01: i = 3; j = 1; add = -1; break;
-		case 0x23: i = 2; j = 0; add = 1; break;
-		case 0x45: i = 1; j = 3; add = -1; break;
-		case 0x67: i = 0; j = 2; add = 1; break;
-		/* Just in case */
-		default: goto dalctomb_fail;
-		}
-		dst[3] = pc[i];
-		dst[2] = pc[i + add];
-		dst[1] = pc[j];
-		*dst = 0220;
-	}
+int dasmatch( const CDAC *str, const CDAC *txt, size_t upto ) {
+	size_t i = 0, len = strlen(txt);
+	for ( ; *str && *txt && i < upto; ++i ) {
+		if ( *str != *txt ) return (i >=len) ? 1 : -1;
+	} return (i == upto) ? 2 : 0;
+}
+#if CHAR_BIT >= 8
+static const size_t U4_LIM = 5;
+static const size_t U2_LIM = 3;
+#else
+static const size_t U4_LIM = 7;
+static const size_t U2_LIM = 5;
 #endif
-	switch ( 0 ) {
-	case ESIZE: dalctomb_size: i = ESIZE; break;
-	case ERANGE: dalctomb_range: i = ERANGE; break;
-	case EPARAM: dalctomb_param: i = EPARAM; break;
-	case 1: dalctomb_fail: i = 1; break;
-	default: dalctomb_done: i = 0;
+size_t dasncpy32( CDAC *str, const CDAC32_t *txt, size_t upto ) {
+	size_t i = 0, done;
+	if ( !str || !txt || !upto ) return EINVAL;
+	for ( ; *txt; ++txt ) {
+		if (
+			( *txt > CHAR16_MAX && upto < U4_LIM ) ||
+			( *txt > CHAR_MAX && upto < U2_LIM )
+		) return ENOMEM;
+		done = c32rtomb( str, *txt, NULL );
+		i += done;
+		/* Indicate failure to copy whole txt */
+		if ( i >= upto ) return 0;
+		str = &str[done];
 	}
-	if ( bytes ) *bytes = (i == 0) ? cb : 0;
 	return i;
 }
-int dasmatch( const char *str, const char *txt, size_t max ) {
-	size_t i = 0, len = strlen(txt);
-	for ( ; *str && *txt && i < max; ++i ) {
-		if ( *str != *txt ) return (i >=len) ? 1 : -1;
-	} return (i == max) ? 2 : 0;
+size_t dasncpy16( CDAC *str, const CDA16 *txt, size_t upto ) {
+	size_t i = 0, done;
+	if ( !str || !txt || !upto ) return EINVAL;
+	for ( ; *txt; ++txt, --upto ) {
+		if ( *txt > CHAR_MAX && upto < U2_LIM ) return ENOMEM;
+		done = c16rtomb( str, *txt, NULL );
+		i += done; upto -= done;
+		/* Indicate failure to copy whole txt */
+		if ( i >= upto ) return 0;
+		str = &str[done];
+	}
+	return i;
+}
+size_t dasncpyw( CDAC *str, const CDAW *txt, size_t upto ) {
+#if WCHAR_MAX == CHAR16_MAX
+	return dasncpy16( str, (CDA16*)txt, upto );
+#else
+	return dasncpy32( str, (CDAC32_t*)txt, upto );
+#endif
+}
+size_t dasncat32( CDAC *str, CDAC32_t *txt, size_t upto ) {
+	size_t len = 0;
+	if ( !str ) return 0;
+	while ( *str ) { ++len; if (len >= upto) { return 0; } }
+	return dasncpy32( &str[len], txt, upto - len );
+}
+size_t dasncat16( CDAC *str, CDA16 *txt, size_t upto ) {
+	size_t len = 0;
+	if ( !str ) return 0;
+	while ( *str ) { ++len; if (len >= upto) { return 0; } }
+	return dasncpy16( &str[len], txt, upto - len );
+}
+size_t dasncatw( CDAC *str, CDAW *txt, size_t upto ) {
+	size_t len = 0;
+	if ( !str ) return 0;
+	while ( *str ) { ++len; if (len >= upto) { return 0; } }
+#if WCHAR_MAX == CHAR16_MAX
+	return dasncpy16( str, (CDA16*)txt, upto );
+#else
+	return dasncpy32( str, (CDAC32_t*)txt, upto );
+#endif
 }
 #define DAFORMAT_C	0x1
 #define DAFORMAT_S	0x2
@@ -95,121 +117,135 @@ int dasmatch( const char *str, const char *txt, size_t max ) {
 #define DAFORMAT_M	0x5
 #define DAFORMAT_P	0x6
 #define DAFORMAT_Z	0x7
+#define DAFORMAT_U2	0x8
+#define DAFORMAT_U4 0x9
 typedef struct daformat {
 	int min;
-	dauc_t info;
-	char pfx;
-	char type;
-	const char *text;
-	fltmax_t gmax;
+	udac_t info;
+	CDAC pfx;
+	CDAC type;
+	const CDAC *text;
+	fdam_t fmax;
 	idam_t imax;
 	udam_t umax;
 } daformat_t;
 /* Prevents accidentally breaking loop */
 int _dasnprintfv_getarg(
-	char *dst,
+	CDAC *dst,
 	size_t size,
-	size_t *done,
 	daformat_t *f, 
 	va_list list
 ) {
-	size_t len = strlen(f.text), cb;
+	size_t len = strlen(f->text);
 	int result = 0;
-	if (dasmatch(f.text,"c",len)==1) f->info = DAFORMAT_C;
-	else if (dasmatch(f.text,"s",len)==1) f->info = DAFORMAT_S;
-	else if (dasmatch(f.text,"ll",len)==1) f->info = DAFORMAT_LL;
-	else if (dasmatch(f.text,"l",len)==1) f->info = DAFORMAT_L;
-	else if (dasmatch(f.text,"m",len)==1) f->info = DAFORMAT_M;
-	else if (dasmatch(f.text,"p",len)==1) f->info = DAFORMAT_P;
-	else if (dasmatch(f.text,"z",len)==1) f->info = DAFORMAT_Z;
+	if (dasmatch(f->text,"c",len)==1) f->info = DAFORMAT_C;
+	else if (dasmatch(f->text,"s",len)==1) f->info = DAFORMAT_S;
+	else if (dasmatch(f->text,"ll",len)==1) f->info = DAFORMAT_LL;
+	else if (dasmatch(f->text,"l",len)==1) f->info = DAFORMAT_L;
+	else if (dasmatch(f->text,"u",len)==1) f->info = DAFORMAT_U2;
+	else if (dasmatch(f->text,"U",len)==1) f->info = DAFORMAT_U4;
+	else if (dasmatch(f->text,"m",len)==1) f->info = DAFORMAT_M;
+	else if (dasmatch(f->text,"p",len)==1) f->info = DAFORMAT_P;
+	else if (dasmatch(f->text,"z",len)==1) f->info = DAFORMAT_Z;
 	else f->info = 0;
-	switch ( f.type ) {
+	switch ( f->type ) {
 	case 'i': case 'd': case 'c':
 		if (f->info == DAFORMAT_C)
-			imax = *(va_arg( list, idac_t * ));
+			f->imax = *(va_arg( list, idac_t * ));
 		else if (f->info == DAFORMAT_S)
-			imax = *(va_arg( list, idas_t * ));
+			f->imax = *(va_arg( list, idas_t * ));
 		else if (f->info == DAFORMAT_LL)
-#ifdef DALL
-			imax = *(va_arg( list, idall_t * ));
+#ifdef IDALL
+			f->imax = *(va_arg( list, idall_t * ));
 #else
 			return ENOKEY;
 #endif
 		else if (f->info == DAFORMAT_L)
-			imax = *(va_arg( list, idal_t * ));
+			f->imax = *(va_arg( list, idal_t * ));
 		else if (f->info == DAFORMAT_M)
-			imax = *(va_arg( list, idam_t * ));
+			f->imax = *(va_arg( list, idam_t * ));
 		else if (f->info == DAFORMAT_P)
-			imax = *(va_arg( list, idap_t * ));
+			f->imax = *(va_arg( list, idap_t * ));
 		else if (f->info == DAFORMAT_Z)
-			imax = *(va_arg( list, size_t * ));
+			f->imax = *(va_arg( list, size_t * ));
 		else
-			imax = va_arg( list, idai_t );
+			f->imax = va_arg( list, idai_t );
 		break;
 	case 'u': case 'b': case 'o': case 'x': case 'X':
 		if (f->info == DAFORMAT_C)
-			umax = *(va_arg( list, udac_t * ));
+			f->umax = *(va_arg( list, udac_t * ));
 		else if (f->info == DAFORMAT_S)
-			umax = *(va_arg( list, udas_t * ));
+			f->umax = *(va_arg( list, udas_t * ));
 		else if (f->info == DAFORMAT_LL)
-#ifdef DA_LLONG
-			umax = *(va_arg( list, udall_t * ));
+#ifdef UDALL
+			f->umax = *(va_arg( list, udall_t * ));
 #else
 			return ENOKEY;
 #endif
 		else if (f->info == DAFORMAT_L)
-			umax = *(va_arg( list, udal_t * ));
+			f->umax = *(va_arg( list, udal_t * ));
 		else if (f->info == DAFORMAT_M)
-			umax = *(va_arg( list, udam_t * ));
+			f->umax = *(va_arg( list, udam_t * ));
 		else if (f->info == DAFORMAT_P)
-			umax = *(va_arg( list, udap_t * ));
+			f->umax = *(va_arg( list, udap_t * ));
 		else if (f->info == DAFORMAT_Z)
-			umax = *(va_arg( list, size_t * ));
+			f->umax = *(va_arg( list, size_t * ));
 		else
-			umax = va_arg( list, udai_t );
+			f->umax = va_arg( list, udai_t );
 		break;
 	}
-	switch ( f.type ) {
+	switch ( f->type ) {
 	case 'c':
-		if ( imax < LONG_MIN || imax > LONG_MAX ) return ERANGE;
-		result = dalctomb( dst, size, (long)imax, done );
+		if ( size < U4_LIM ) return ENOMEM;
+		if ( f->imax < CHAR32_MIN || f->imax > CHAR32_MAX ) return ERANGE;
+		c32rtomb( dst, (CDAC32_t)f->imax, NULL );
 		break;
-	case 'B': result = dasncat( dst, bval ? "true" : "false", NULL );
+	case 'B': result = dasncat( dst, f->umax ? "true" : "false", size, NULL );
 		break;
 	case 'i':
-	case 'd': result = daitos( dst, size, val, 10, false );	break;
-	case 'b': result = dautos( dst, size, val, 2, false );	break;
-	case 'o': result = dautos( dst, size, val, 8, false );	break;
-	case 'u': result = dautos( dst, size, val, 10, false );	break;
-	case 'x': result = dautos( dst, size, val, 16, true );	break;
-	case 'X': result = dautos( dst, size, val, 16, false );	break;
-	case 's': result = dasncat( dst, va_arg( list, char* ), size );
+	case 'd': result = daitos( dst, size, f->imax, 10, false );	break;
+	case 'b': result = dautos( dst, size, f->umax, 2, false );	break;
+	case 'o': result = dautos( dst, size, f->umax, 8, false );	break;
+	case 'u': result = dautos( dst, size, f->umax, 10, false );	break;
+	case 'x': result = dautos( dst, size, f->umax, 16, true );	break;
+	case 'X': result = dautos( dst, size, f->umax, 16, false );	break;
+	case 's':
+		if ( f->info == DAFORMAT_U4 )
+			result = (dasncat32( dst, va_arg( list, CDAC32_t* ), size ))
+			? 0 : ENOMEM;
+		else if ( f->info == DAFORMAT_U2 )
+			result = (dasncat16( dst, va_arg( list, CDA16* ), size ))
+			? 0 : ENOMEM;
+		else if ( f->info == DAFORMAT_L )
+			result = (dasncatw( dst, va_arg( list, CDAW* ), size ))
+			? 0 : ENOMEM;
+		else
+			result = (dasncat( dst, va_arg( list, CDAC* ), size, NULL ))
+			? 0 : ENOMEM;
 		break;
 	}
 	(void)memset( f, 0, sizeof(daformat_t) );
 	return result;
 }
 int dasnprintfv(
-	char *dst,
+	CDAC *dst,
 	size_t size,
-	size_t *done,
-	const char *format,
+	const CDAC *format,
 	va_list list
 )
 {
-	int c, result = 0;
+	int c, result = 0, m = 0;
 	size_t i = 0, len = size - 1;
 	bool chk = 0, set = 0;
 	daformat_t f;
-	/* In case of errors */
-	if ( done ) *done = 0;
 	/* Now we read our format & arguments */
-	for (;(c = *format) && i < len,++format,++dst) {
+	for (;(c = *format) && i < len;++format) {
 		if ( chk ) {
 			switch ( c ) {
 			case '%':
 			{
-				dst[i++] = c;
+				*dst++ = c;
+				--size; ++i;
 				chk = 0;
 				continue;
 			}
@@ -221,8 +257,7 @@ int dasnprintfv(
 				m = f.min;
 				f.min *= 10;
 				if (f.min < m) {
-					assert(0);
-					return i;
+					return ERANGE;
 				}
 				f.min += (c - '0');
 				break;
@@ -230,31 +265,31 @@ int dasnprintfv(
 			case 's': case 'b': case 'B':
 			case 'l': case 'd': case 'i':
 			case 'X': case 'x': case 'u':
-				f.type = format;
+				f.type = c;
 				chk = 0;
 				set = 1;
 			}
 			if ( set ) {
-				result = _dasnprintfv_getarg( &f, list );
-				if ( result != 0 ) { assert(0); return result; }
-				i += strlen(dst);
-				dst = strstr(dst, "");
-				--dst; set = 0;
+				result = _dasnprintfv_getarg( dst, size, &f, list );
+				if ( result != 0 ) { return result; }
+				len = strlen(dst);
+				i += len; size -= len;
+				dst = &dst[len];
+				set = 0;
 			}
 		} else if ( c == '%' ) {
-			f.type = NULL;
+			f.type = 0;
 			f.pfx = ' ';
 			f.min = 0;
 			chk = 1;
 		}
 	} *dst = 0;
-	if ( done ) *done = i;
 	return result;
 }
 int dasnprintf(
-	char *dst,
+	CDAC *dst,
 	size_t size,
-	const char *format,
+	const CDAC *format,
 	...
 ) {
 	int result;
@@ -262,5 +297,5 @@ int dasnprintf(
 	va_start( list, format );
 	result = dasnprintfv( dst, size, format, list );
 	va_end( list );
-	return 
+	return result;
 }
