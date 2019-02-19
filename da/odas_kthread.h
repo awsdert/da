@@ -1,12 +1,16 @@
 #ifndef INC_ODAS_KTHREAD
 #define INC_ODAS_KTHREAD
+#include "odas.h"
 #include "odas_listent.h"
+#include "odas_sender_header.h"
+#include "odas_kproc.h"
+#include "odas_kapc_state.h"
 #ifdef DA_OS_MSWIN
 typedef KTHREAD odas_kthread_t;
 #else
 typedef struct odas_kthread odas_kthread_t;
 struct odas_kthread {
-	DISPATCHER_HEADER Header;
+	odas_sender_header_t Header;
 	udal64_t CycleTime;
 	udal_t HighCycleTime;
 	udal64_t QuantumTarget;
@@ -16,7 +20,7 @@ struct odas_kthread {
 	udal_t ThreadLock;
 	union
 	{
-			KAPC_STATE ApcState;
+			odas_kapc_state_t ApcState;
 			udac_t ApcStateFill[23];
 	};
 	cdac_t Priority;
@@ -52,7 +56,7 @@ struct odas_kthread {
 	union
 	{
 			odas_listent_t WaitListEntry;
-			SINGLE_odas_listent_t SwapListEntry;
+			odas_single_listent_t SwapListEntry;
 	};
 	PKQUEUE Queue;
 	udal_t WaitTime;
@@ -126,12 +130,12 @@ struct odas_kthread {
 	udal_t SystemCallNumber;
 	udal_t Spare02;
 	udal_t UserAffinity;
-	PKPROCESS Process;
+	odas_kproc_t *Process;
 	udal_t Affinity;
-	PKAPC_STATE ApcStatePointer[2];
+	odas_kapc_state_t *ApcStatePointer[2];
 	union
 	{
-			KAPC_STATE SavedApcState;
+			odas_kapc_state_t SavedApcState;
 			udac_t SavedApcStateFill[23];
 	};
 	cdac_t FreezeCount;
@@ -162,7 +166,7 @@ struct odas_kthread {
 			struct
 			{
 					 udac_t SuspendApcFill3[36];
-					 PKPRCB WaitPrcb;
+					 odas_kprcb_t *WaitPrcb;
 			};
 			struct
 			{
