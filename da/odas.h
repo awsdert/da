@@ -7,6 +7,7 @@
 typedef CCHAR		mswin_dacchar_t;
 typedef CSHORT		mswin_dacshort_t;
 typedef NTSTATUS	dastatus_t;
+typedef SIZE_T dasize_t;
 typedef KIRQL dakirq_t;
 typedef UNICODE_STRING odas_ucs_t;
 typedef MDL			odas_mdl_t;
@@ -41,13 +42,22 @@ typedef KAPC_STATE odas_kapc_state_t;
 typedef SINGLE_LIST_ENTRY odas_single_listent_t;
 typedef MMADDRESS_NODE odas_mmaddr_node_t;
 typedef MM_AVL_TABLE odas_mm_available_table_t;
+typedef _EPROCESS_QUOTA_BLOCK odas_eproc_quota_block_t;
+typedef _EPROCESS_QUOTA_ENTRY odas_eproc_quota_entry_t;
+typedef PEB odas_peb_t;
+typedef KSPIN_LOCK da_kspin_lock_t;
+typedef _PAGEFAULT_HISTORY odas_pagefault_history_t;
+typedef RTL_CRITICAL_SECTION odas_rtl_crit_sect_t;
+typedef RTL_CRITICAL_SECTION_DEBUG odas_rtl_crit_sect_dbg_t;
 #else
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
 typedef char mswin_dacchar_t;
-typedef short mswin_dacshort_t;
+typedef idas_t mswin_dacshort_t;
+typedef udal_t da_kspin_lock_t;
 typedef int dastatus_t;
+typedef size_t dasize_t;
 typedef int dakprocmode_t;
 typedef int dakirq_t;
 typedef struct odas_dev odas_dev_t;
@@ -80,5 +90,13 @@ typedef struct odas_kidtent odas_kidtent_t;
 typedef struct odas_kexec_options odas_kexec_options_t;
 typedef struct odas_mmaddr_node odas_mmaddr_node_t;
 typedef struct odas_mm_available_table odas_mm_available_table_t;
+typedef struct odas_eproc_quota_block odas_eproc_quota_block_t;
+typedef struct odas_eproc_quota_entry odas_eproc_quota_entry_t;
+typedef struct odas_peb odas_peb_t;
+typedef struct odas_proc_ws_watch_info odas_proc_ws_watch_info_t;
+typedef struct odas_pagefault_history odas_pagefault_history_t;
+typedef struct odas_rtl_crit_sect odas_rtl_crit_sect_t;
+typedef struct odas_rtl_crit_sect_dbg odas_rtl_crit_sect_dbg_t;
+typedef struct odas_ucs odas_ucs_t;
 #endif
 #endif

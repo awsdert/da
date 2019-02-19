@@ -15,6 +15,9 @@
 #define IRP_MJ_MAXIMUM_FUNCTION 512
 #include "odas.h"
 #include "odas_lli.h"
+#include "odas_llu.h"
+#include "odas_ucs.h"
+#include "odas_peb.h"
 #include "odas_listent.h"
 #include "odas_sender_header.h"
 #include "odas_client_id.h"
@@ -37,12 +40,6 @@ typedef struct odas odas_t;
 typedef void (*da_cancel_ft)( odas_t *da );
 typedef void (*da_run_ft)( odas_dev_t *dev, odas_irp_t *irp );
 typedef void (*da_end_ft)( odas_t *da );
-typedef struct odas_ucs odas_ucs_t;
-struct odas_ucs {
-	daw_t	Length;
-  daw_t	MaximumLength;
-  daw_t	*Buffer;
-};
 struct odas {
 	mswin_dacshort_t		Type;
   mswin_dacshort_t		Size;

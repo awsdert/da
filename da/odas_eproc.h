@@ -8,6 +8,8 @@
 #include "odas_xpushlock.h"
 #include "odas_mmaddr_node.h"
 #include "odas_mm_available_table.h"
+#include "odas_eproc_quota_block.h"
+#include "odas_pagefault_history.h"
 #ifndef DA_OS_MSWIN
 struct odas_eproc {
 	odas_kproc_t Pcb;
@@ -45,8 +47,8 @@ struct odas_eproc {
 	PEJOB Job;
 	void* SectionObject;
 	void* SectionBaseAddress;
-	_EPROCESS_QUOTA_BLOCK * QuotaBlock;
-	_PAGEFAULT_HISTORY * WorkingSetWatch;
+	odas_eproc_quota_block_t * QuotaBlock;
+	odas_pagefault_history_t * WorkingSetWatch;
 	void* Win32WindowStation;
 	void* InheritedFromUniqueProcessId;
 	void* LdtInformation;
@@ -71,7 +73,7 @@ struct odas_eproc {
 	udal_t ImagePathHash;
 	udal_t DefaultHardErrorProcessing;
 	idal_t LastThreadExitStatus;
-	PPEB Peb;
+	odas_peb_t *Peb;
 	odas_xfast_ref_t PrefetchTrace;
 	odas_lli_t ReadOperationCount;
 	odas_lli_t WriteOperationCount;
