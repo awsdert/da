@@ -4,11 +4,13 @@
 #include "odas_listent.h"
 #include "odas_sender_header.h"
 #include "odas_kproc.h"
+#include "odas_kapc.h"
 #include "odas_kapc_state.h"
-#ifdef DA_OS_MSWIN
-typedef KTHREAD odas_kthread_t;
-#else
-typedef struct odas_kthread odas_kthread_t;
+#include "odas_kwait_block.h"
+#include "odas_ktimer.h"
+#include "odas_kque.h"
+#include "odas_kgate.h"
+#ifndef DA_OS_MSWIN
 struct odas_kthread {
 	odas_sender_header_t Header;
 	udal64_t CycleTime;
@@ -35,8 +37,8 @@ struct odas_kthread {
 	idal_t WaitStatus;
 	union
 	{
-			PKWAIT_BLOCK WaitBlockList;
-			PKGATE GateObject;
+			odas_kwait_block_t *WaitBlockList;
+			odas_kgate_t *GateObject;
 	};
 	union
 	{
@@ -58,7 +60,7 @@ struct odas_kthread {
 			odas_listent_t WaitListEntry;
 			odas_single_listent_t SwapListEntry;
 	};
-	PKQUEUE Queue;
+	odas_kque_t *Queue;
 	udal_t WaitTime;
 	union
 	{
@@ -72,7 +74,7 @@ struct odas_kthread {
 	void* Teb;
 	union
 	{
-			KTIMER Timer;
+			odas_ktimer_t Timer;
 			udac_t TimerFill[40];
 	};
 	union
@@ -91,7 +93,7 @@ struct odas_kthread {
 	};
 	union
 	{
-			KWAIT_BLOCK WaitBlock[4];
+			odas_kwait_block_t WaitBlock[4];
 			struct
 			{
 					 udac_t WaitBlockFill0[23];
@@ -111,7 +113,7 @@ struct odas_kthread {
 	};
 	udac_t LargeStack;
 	odas_listent_t QueueListEntry;
-	PKTRAP_FRAME TrapFrame;
+	odas_ktrap_frame_t *TrapFrame;
 	void* FirstArgument;
 	union
 	{
@@ -147,7 +149,7 @@ struct odas_kthread {
 	void* StackBase;
 	union
 	{
-			KAPC SuspendApc;
+			odas_kapc_t SuspendApc;
 			struct
 			{
 					 udac_t SuspendApcFill0[1];

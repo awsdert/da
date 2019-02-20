@@ -48,9 +48,6 @@ typedef BYTE dab_t;
 typedef WORD daw_t;
 typedef DWORD dad_t;
 typedef QWORD daq_t;
-typedef CSHORT dacshort_t;
-typedef WPARAM dawparam_t;
-typedef LPARAM dalparam_t;
 
 #define DA8_DEFINED
 typedef INT8 ida8_t;
@@ -68,16 +65,27 @@ typedef UINT64 uda64_t;
 #define DAL8_DEFINED
 typedef INT8 idal8_t;
 typedef UINT8 udal8_t;
+#define IDAL8_MAX INT8_MAX
+#define IDAL8_MIN INT8_MIN
+#define UDAL8_MAX UINT8_MAX
 #define DAL16_DEFINED
 typedef INT16 idal16_t;
 typedef UINT16 udal16_t;
+#define IDAL16_MAX INT16_MAX
+#define IDAL16_MIN INT16_MIN
+#define UDAL16_MAX UINT16_MAX
 #define DAL32_DEFINED
 typedef INT32 idal32_t;
 typedef UINT32 udal32_t;
+#define IDAL32_MAX INT32_MAX
+#define IDAL32_MIN INT32_MIN
+#define UDAL32_MAX UINT32_MAX
 #define DAL64_DEFINED
 typedef INT64 idal64_t;
 typedef UINT64 udal64_t;
-
+#define IDAL64_MAX INT64_MAX
+#define IDAL64_MIN INT64_MIN
+#define UDAL64_MAX UINT64_MAX
 #else
 #include <linux/limits.h>
 #include <linux/types.h>
@@ -90,22 +98,56 @@ typedef UINT64 udal64_t;
 #define _DAVARIS( TXT, VAR ) DAMSG( TXT " = " #VAR )
 #define DAVARIS( VAR ) _DAVARIS( #VAR, VAR )
 
+/* Try compiler predefines first */
 #ifdef __CHAR_BIT__
 #define IDAC_BIT __CHAR_BIT__
 #define IDAC_MAX __SCHAR_MAX__
-#define IDAC_MIN __SCHAR_MIN__
+#define IDAC_MIN ((-__SCHAR_MAX__)-1)
 #define UDAC_MAX ((__SCHAR_MAX__##U * 2) + 1)
 #define IDAS_MAX __SHRT_MAX__
-#define IDAS_MIN __SHRT_MIN__
+#define IDAS_MIN ((-__SHRT_MAX__)-1)
 #define UDAS_MAX ((__SHRT_MAX__##U * 2) + 1)
 #define IDAI_MAX __INT_MAX__
-#define IDAI_MIN __INT_MIN__
+#define IDAI_MIN ((-__INT_MAX__)-1)
 #define UDAI_MAX ((__INT_MAX__##U * 2) + 1)
 #define IDAL_MAX __LONG_MAX__
-#define IDAL_MIN __LONG_MIN__
+#define IDAL_MIN ((-__LONG_MAX__)-1)
 #define UDAL_MAX ((__LONG_MAX__##U * 2) + 1)
+/* Check for fixed scenarios */
+#elif defined( DA_OS_LLP64 ) || defined( DA_OS_ILP64 ) \
+	|| defined( DA_OS_ILP32 ) || defined( DA_OS_LP64 ) \
+	|| defined( DA_OS_LP32 )
+#define IDAC_BIT 8
+#define IDAC_MAX 127
+#define IDAC_MIN -128
+#define UDAC_MAX 255
+#define IDAS_MAX 32767
+#define IDAS_MIN -32768
+#define UDAS_MAX 65535
+#ifdef DA_OS_LP32 )
+#define IDAI_MAX 32767
+#define IDAI_MIN -32768
+#define UDAI_MAX 65535
+#elif defined( DA_OS_ILP64 )
+#define IDAI_MAX 9223372036854775807
+#define IDAI_MIN -9223372036854775808
+#define UDAI_MAX 18446744073709551615
 #else
-/* Assume shortest possible size */
+#define IDAI_MAX 2147483647
+#define IDAI_MIN -2147483648
+#define UDAI_MAX 4294967295
+#endif
+#if defined( DA_OS_ILP64 ) || defined( DA_OS_LP64 )
+#define IDAL_MAX 9223372036854775807L
+#define IDAL_MIN -9223372036854775808L
+#define UDAL_MAX 18446744073709551615L
+#else
+#define IDAL_MAX 2147483647L
+#define IDAL_MIN -2147483648L
+#define UDAL_MAX 4294967295L
+#endif
+/* Assume shortest known size */
+#else
 #define IDAC_BIT 6
 #define IDAC_MAX 31
 #define IDAC_MIN -32
@@ -276,71 +318,150 @@ typedef udall_t daq_t;
 #define DA8_DEFINED
 typedef __s8 ida8_t;
 typedef __u8 uda8_t;
+#define IDA8_MAX 127
+#define IDA8_MIN -128
+#define UDA8_MAX 255
 #define DA16_DEFINED
 typedef __s16 ida16_t;
 typedef __u16 uda16_t;
+#define IDA16_MAX 32767
+#define IDA16_MIN -32768
+#define UDA16_MAX 65535
 #define DA32_DEFINED
 typedef __s32 ida32_t;
 typedef __u32 uda32_t;
+#if IDAI_MAX == IDAS_MAX
+#define IDA32_MAX 2147483647L
+#define IDA32_MIN -2147483648L
+#define UDA32_MAX 4294967295L
+#else
+#define IDA32_MAX 2147483647
+#define IDA32_MIN -2147483648
+#define UDA32_MAX 4294967295
+#endif
 #define DA64_DEFINED
 typedef __s64 ida64_t;
 typedef __u64 uda64_t;
+#if IDAL_MAX < IDALL_MAX
+#define IDA64_MAX 9223372036854775807LL
+#define IDA64_MIN -9223372036854775808LL
+#define UDA64_MAX 18446744073709551615LL
+#else
+#define IDA64_MAX 9223372036854775807L
+#define IDA64_MIN -9223372036854775808L
+#define UDA64_MAX 18446744073709551615L
+#endif
 #define DAL8_DEFINED
 typedef __s8 idal8_t;
 typedef __u8 udal8_t;
+#define IDAL8_MAX 127
+#define IDAL8_MIN -128
+#define UDAL8_MAX 255
 #define DAL16_DEFINED
 typedef __s16 idal16_t;
 typedef __u16 udal16_t;
+#define IDAL16_MAX 32767
+#define IDAL16_MIN -32768
+#define UDAL16_MAX 65535
 #define DAL32_DEFINED
 typedef __s32 idal32_t;
 typedef __u32 udal32_t;
+#if IDAI_MAX == IDAS_MAX
+#define IDAL32_MAX 2147483647L
+#define IDAL32_MIN -2147483648L
+#define UDAL32_MAX 4294967295L
+#else
+#define IDAL32_MAX 2147483647
+#define IDAL32_MIN -2147483648
+#define UDAL32_MAX 4294967295
+#endif
 #define DAL64_DEFINED
 typedef __s64 idal64_t;
 typedef __u64 udal64_t;
+#if IDAL_MAX < IDALL_MAX
+#define IDAL64_MAX 9223372036854775807LL
+#define IDAL64_MIN -9223372036854775808LL
+#define UDAL64_MAX 18446744073709551615LL
+#else
+#define IDAL64_MAX 9223372036854775807L
+#define IDAL64_MIN -9223372036854775808L
+#define UDAL64_MAX 18446744073709551615L
 #endif
-
-#ifndef DAL8_DEFINED
-#ifdef __INT_LEAT8_TYPE__
+#elif defined( __INT_LEAST8_TYPE__ )
 #define DAL8_DEFINED
 typedef __INT_LEAST8_TYPE__ ida8_t;
 typedef __UINT_LEAST8_TYPE__ uda8_t;
+#define IDAL8_MAX __INT8_MAX__
+#define IDAL8_MIN __INT8_MIN__
+#define UDAL8_MAX __UINT8_MAX__
 #define DAL16_DEFINED
 typedef __INT_LEAST16_TYPE__ ida16_t;
 typedef __UINT_LEAST16_TYPE__ uda16_t;
+#define IDAL16_MAX __INT16_MAX__
+#define IDAL16_MIN __INT16_MIN__
+#define UDAL16_MAX __UINT16_MAX__
 #define DAL32_DEFINED
 typedef __INT_LEAST32_TYPE__ ida32_t;
 typedef __UINT_LEAST32_TYPE__ uda32_t;
+#define IDAL32_MAX __INT32_MAX__
+#define IDAL32_MIN __INT32_MIN__
+#define UDAL32_MAX __UINT32_MAX__
 #define DAL64_DEFINED
 typedef __INT_LEAST64_TYPE__ ida64_t;
 typedef __UINT_LEAST64_TYPE__ uda64_t;
+#define IDAL64_MAX __INT64_MAX__
+#define IDAL64_MIN __INT64_MIN__
+#define UDAL64_MAX __UINT64_MAX__
 #elif IDAC_BIT >= 8
 #define DAL8_DEFINED
 typedef signed char idal8_t;
 typedef unsigned char udal8_t;
+#define IDAL8_MAX IDAC_MAX
+#define IDAL8_MIN IDAC_MIN
+#define UDAL8_MAX UDAC_MAX
 #define DAL16_DEFINED
 typedef short idal16_t;
 typedef unsigned short udal16_t;
+#define IDAL16_MAX IDAS_MAX
+#define IDAL16_MIN IDAS_MIN
+#define UDAL16_MAX UDAS_MAX
 #define DAL32_DEFINED
 #if IDAI_MAX > IDAS_MAX
 typedef int idal32_t;
 typedef unsigned int udal32_t;
+#define IDAL32_MAX IDAI_MAX
+#define IDAL32_MIN IDAI_MIN
+#define UDAL32_MAX UDAI_MAX
+#define DAL64_DEFINED
 #if IDAL_MAX > IDAI_MAX
 typedef long idal64_t;
 typedef unsigned long udal64_t;
+#define IDAL64_MAX IDAL_MAX
+#define IDAL64_MIN IDAL_MIN
+#define UDAL64_MAX UDAL_MAX
 #else
-typedef long long idal64_t;
-typedef unsigned long long udal64_t;
+typedef idall_t idal64_t;
+typedef udall_t udal64_t;
+#define IDAL64_MAX IDALL_MAX
+#define IDAL64_MIN IDALL_MIN
+#define UDAL64_MAX UDALL_MAX
 #endif
 #else
 typedef long idal32_t;
 typedef unsigned long udal32_t;
+#define IDAL32_MAX IDAL_MAX
+#define IDAL32_MIN IDAL_MIN
+#define UDAL32_MAX UDAL_MAX
 #if IDALL_MAX > IDAL_MAX
-typedef long long idal64_t;
-typedef unsigned long long udal64_t;
+#define IDAL64_DEFINED
+typedef idall_t idal64_t;
+typedef udall_t udal64_t;
+#define IDAL64_MAX IDALL_MAX
+#define IDAL64_MIN IDALL_MIN
+#define UDAL64_MAX UDALL_MAX
 #endif
 #endif
-#endif
-#endif
+#endif /* IDAC == 8 */
 
 #endif /* DA_OS_MSWIN */
 

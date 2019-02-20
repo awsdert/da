@@ -2,15 +2,27 @@
 #define INC_DA_DAS_H
 #include "ida.h"
 #include <stdarg.h>
+#include <linux/err.h>
 #include <linux/string.h>
+
+#define _DA_TOSTR(VAL) (cdac_t*)(#VAL)
+#define DA_TOSTR(VAL) _DA_TOSTR(VAL)
+#define _DA_TOWCS(VAL) (cdaw_t*)(L###VAL)
+#define DA_TOWCS(VAL) _DA_TOWCS(VAL)
 
 #ifdef DA_OS_MSWIN
 typedef CHAR cdac_t;
 #define CDAC_MAX CHAR_MAX
 #define CDAC_MIN CHAR_MAX
 typedef WCHAR cdaw_t;
-typedef SHORT cda16_t;
+#define CDAW_MAX WCHAR_MAX
+#define CDAW_MIN WCHAR_MIN
+typedef USHORT cda16_t;
+#define CDA16_MAX USHRT_MAX
+#define CDA16_MIN 0
 typedef LONG cda32_t;
+#define CDA32_MAX ULONG_MAX
+#define CDA32_MIN 0
 #else
 typedef char cdac_t;
 #ifdef UNSIGNED_CHAR
@@ -26,15 +38,21 @@ typedef __WCHAR_TYPE__ cdaw_t;
 #define CDAW_MIN __WCHAR_MIN__
 typedef __CHAR16_TYPE__ cda16_t;
 typedef __CHAR32_TYPE__ cda32_t;
+#define CDA16_MAX __UINT_LEAST16_MAX__
+#define CDA16_MIN 0
+#define CDA32_MAX __UINT_LEAST32_MAX__
+#define CDA32_MIN 0
 #else
 typedef unsigned int cdaw_t;
 #define CDAW_MAX UDAI_MAX
 #define CDAW_MIN 0
 typedef udal16_t cda16_t;
 typedef udal32_t cda32_t;
-#endif
 #define CDA16_MAX UDAL16_MAX
+#define CDA16_MIN 0
 #define CDA32_MAX UDAL32_MAX
+#define CDA32_MIN 0
+#endif
 #endif
 
 #ifndef CHAR16_MAX
@@ -55,36 +73,36 @@ typedef udal32_t cda32_t;
 **/
 int dasmatch( const char *str, const char *txt, size_t max );
 int dasncat(
-	char *dst,
-	const char *src,
+	cdac_t *dst,
+	const cdac_t *src,
 	size_t size,
 	char **end
 );
 int daftoa(
-	char *dst,
+	cdac_t *dst,
 	size_t size,
 	idam_t val,
 	size_t base,
 	bool small
 );
 int dautoa(
-	char *dst,
+	cdac_t *dst,
 	size_t size,
 	udam_t val,
 	size_t base,
 	bool small
 );
 int daitoa(
-	char *dst,
+	cdac_t *dst,
 	size_t size,
 	idam_t val,
 	size_t base,
 	bool small
 );
 int dasnprintf(
-	char *dst,
+	cdac_t *dst,
 	size_t size,
-	const char *format,
+	const cdac_t *format,
 	...
 );
 #endif

@@ -6,10 +6,13 @@
 #include "odas_xrundown_ref.h"
 #include "odas_xfast_ref.h"
 #include "odas_xpushlock.h"
-#include "odas_mmaddr_node.h"
+#include "odas_mm_support.h"
+#include "odas_mm_addr_node.h"
 #include "odas_mm_available_table.h"
 #include "odas_eproc_quota_block.h"
 #include "odas_pagefault_history.h"
+#include "odas_se_audit_proc_init_info.h"
+#include "odas_hardware_pte.h"
 #ifndef DA_OS_MSWIN
 struct odas_eproc {
 	odas_kproc_t Pcb;
@@ -28,11 +31,11 @@ struct odas_eproc {
 	void* DebugPort;
 	union
 	{
-	void* ExceptionPortData;
-	udal_t ExceptionPortValue;
-	udal_t ExceptionPortState: 3;
+		void* ExceptionPortData;
+		udal_t ExceptionPortValue;
+		udal_t ExceptionPortState: 3;
 	};
-	PHANDLE_TABLE ObjectTable;
+	odas_handles_t *ObjectTable;
 	odas_xfast_ref_t Token;
 	udal_t WorkingSetPage;
 	odas_xpushlock_t AddressCreationLock;
@@ -44,7 +47,7 @@ struct odas_eproc {
 	udal_t NumberOfPrivatePages;
 	udal_t NumberOfLockedPages;
 	void* Win32Process;
-	PEJOB Job;
+	odas_ejob_t *Job;
 	void* SectionObject;
 	void* SectionBaseAddress;
 	odas_eproc_quota_block_t * QuotaBlock;
@@ -59,8 +62,8 @@ struct odas_eproc {
 	void* FreeTebHint;
 	union
 	{
-	HARDWARE_PTE PageDirectoryPte;
-	udal64_t Filler;
+		odas_hardware_pte_t PageDirectoryPte;
+		udal64_t Filler;
 	};
 	void* Session;
 	udac_t ImageFileName[16];
@@ -84,8 +87,8 @@ struct odas_eproc {
 	udal_t CommitChargeLimit;
 	udal_t CommitChargePeak;
 	void *AweInfo;
-	SE_AUDIT_PROCESS_CREATION_INFO SeAuditProcessCreationInfo;
-	MMSUPPORT Vm;
+	odas_se_audit_proc_init_info_t SeAuditProcessCreationInfo;
+	odas_mm_support_t Vm;
 	odas_listent_t MmProcessLinks;
 	udal_t ModifiedPageCount;
 	udal_t Flags2;

@@ -1,10 +1,10 @@
-#ifndef INC_ODAS_KSEMAPHORE
-#define INC_ODAS_KSEMAPHORE
+#ifndef INC_ODAS_KGATE
+#define INC_ODAS_KGATE
+#include "odas.h"
 #include "odas_sender_header.h"
 #ifndef DA_OS_MSWIN
-struct odas_ksemaphore {
+struct odas_kgate {
 	odas_sender_header_t Header;
-	idal_t Limit;
 };
 #endif
 #endif

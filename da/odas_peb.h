@@ -1,9 +1,13 @@
 #ifndef INC_ODAS_PEB
 #define INC_ODAS_PEB
 #include "odas.h"
+#include "odas_lli.h"
 #include "odas_llu.h"
 #include "odas_ucs.h"
 #include "odas_listent.h"
+#include "odas_peb_loader_data.h"
+#include "odas_rtl_proc_param.h"
+#include "odas_rtl_crit_sect.h"
 #ifndef DA_OS_MSWIN
 struct odas_peb {
 	udac_t InheritedAddressSpace;
@@ -17,8 +21,8 @@ struct odas_peb {
 	udal_t SpareBits: 4;
 	void *Mutant;
 	void *ImageBaseAddress;
-	PPEB_LDR_DATA Ldr;
-	PRTL_USER_PROCESS_PARAMETERS ProcessParameters;
+	odas_peb_loader_data_t *Ldr;
+	odas_rtl_proc_param_t *ProcessParameters;
 	void *SubSystemData;
 	void *ProcessHeap;
 	odas_rtl_crit_sect_t *FastPebLock;
@@ -35,7 +39,7 @@ struct odas_peb {
 	};
 	udal_t SystemReserved[1];
 	udal_t SpareUlong;
-	PPEB_FREE_BLOCK FreeList;
+	odas_peb_free_block_t *FreeList;
 	udal_t TlsExpansionCounter;
 	void *TlsBitmap;
 	udal_t TlsBitmapBits[2];
@@ -78,12 +82,12 @@ struct odas_peb {
 	void *pShimData;
 	void *AppCompatInfo;
 	odas_ucs_t CSDVersion;
-	_ACTIVATION_CONTEXT_DATA * ActivationContextData;
-	_ASSEMBLY_STORAGE_MAP * ProcessAssemblyStorageMap;
-	_ACTIVATION_CONTEXT_DATA * SystemDefaultActivationContextData;
-	_ASSEMBLY_STORAGE_MAP * SystemAssemblyStorageMap;
+	da_activation_ctx_data_t * ActivationContextData;
+	da_asm_storage_map_t * ProcessAssemblyStorageMap;
+	da_activation_ctx_data_t * SystemDefaultActivationContextData;
+	da_asm_storage_map_t * SystemAssemblyStorageMap;
 	udal_t MinimumStackCommit;
-	_FLS_CALLBACK_INFO * FlsCallback;
+	da_fls_callback_info_t * FlsCallback;
 	odas_listent_t FlsListHead;
 	void *FlsBitmap;
 	udal_t FlsBitmapBits[4];

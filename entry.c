@@ -1,9 +1,10 @@
+#define DA_REG da/test
 #include "da/da.h"
 DA_LICENSE("MIT")
 DA_AUTHOR("da and gb2985@gmail.com")
-DA_DESCRIPTION("da (driver api) test")
-long da_entry( da_t *da, wchar_t **reg ) {
-	*reg = DA_REG;
+DA_DESC("da (driver api) test")
+long da_entry( odas_t *da, cdaw_t **reg ) {
+	*reg = DA_TOWCS(DA_REG);
 	/* Intentionally fail */
-	return EXIT_FAILURE;
+	return 1;
 }

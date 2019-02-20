@@ -8,12 +8,8 @@ NTSTATUS DriverEntry(
 	return da_entry( DriverObject, RegistryPath );
 }
 #else
-da_t da = {0};
-#define DA__TOSTR(VAL) #VAL
-#define DA_TOSTR(VAL) DA__TOSTR(VAL)
-#define DA__TOWCS(VAL) L###VAL
-#define DA_TOWCS(VAL) DA__TOWCS(VAL)
-wchar_t *reg = DA_TOWCS(DA_REG);
+odas_t da = {0};
+cdaw_t *reg = NULL;
 static int __init insert_mod(void)
 {
 	if ( da_entry( &da, &reg ) == 0 ) {
