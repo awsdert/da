@@ -4,6 +4,8 @@
 #ifdef DA_OS_MSWIN
 #include <ntddk.h>
 #include <wdf.h>
+#define DA_STATUS_SUCCESS STATUS_SUCCESS
+#define DA_SUCCES(VAL) NT_SUCCESS(VAL)
 typedef CCHAR		mswin_dacchar_t;
 typedef CSHORT		mswin_dacshort_t;
 typedef NTSTATUS	dastatus_t;
@@ -91,6 +93,8 @@ typedef _FLS_CALLBACK_INFO da_fls_callback_info_t;
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
+#define DA_STATUS_SUCCESS 0
+#define DA_SUCCESS(VAL) ((VAL)==0)
 typedef enum eda_exception_disposition {
 	ExceptionContinueExecution = 0,
 	ExceptionContinueSearch = 1,

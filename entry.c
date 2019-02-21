@@ -8,3 +8,4 @@ long da_entry( odas_t *da, cdaw_t **reg ) {
 	/* Intentionally fail */
 	return 1;
 }
+DA_INIT(da_entry)

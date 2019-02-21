@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 
-obj-m	:= da_main.o entry.o da/das.o
+obj-m	:= entry.o das.o
 
 else
 

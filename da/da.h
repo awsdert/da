@@ -5,6 +5,14 @@
 #include "das.h"
 
 #ifdef DA_OS_MSWIN
+#define DA_INIT(ENTRYPOINT) DRIVER_INITIALIZE DriverEntry;             \
+NTSTATUS DriverEntry(                                                  \
+    _In_ PDRIVER_OBJECT  DriverObject,                                 \
+    _In_ PUNICODE_STRING RegistryPath                                  \
+) {                                                                    \
+	return (NTSTATUS)ENTRYPOINT(                                         \
+		(odas_t*)DriverObject, (odas_ucs_t*)RegistryPath );                \
+}
 #define DA_LICENSE(str)
 #define DA_AUTHOR(str)
 #define DA_DESC(str)
@@ -12,6 +20,24 @@
 #define DA_LICENSE(str) MODULE_LICENSE(str);
 #define DA_AUTHOR(str) MODULE_AUTHOR(str);
 #define DA_DESC(str) MODULE_DESCRIPTION(str);
+#define DA_INIT(ENTRYPOINT) odas_t da = {0};                           \
+cdaw_t *reg = NULL;                                                    \
+static int __init insert_mod(void)                                     \
+{                                                                      \
+	if ( ENTRYPOINT( &da, &reg ) == 0 ) {                                \
+		printk("da driver loaded");                                        \
+		return 0;                                                          \
+	} printk("da driver failed to load");                                \
+	return 1;                                                            \
+}                                                                      \
+static void __exit remove_mod(void)                                    \
+{                                                                      \
+	da.DriverUnload( &da );                                              \
+	printk("da driver unloaded");                                        \
+}                                                                      \
+module_init(insert_mod);                                               \
+module_exit(remove_mod);
+/* What did I use this for? */
 #define IRP_MJ_MAXIMUM_FUNCTION 512
 #include "odas.h"
 #include "odas_lli.h"
