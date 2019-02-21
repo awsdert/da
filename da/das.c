@@ -1,9 +1,9 @@
 #include "das.h"
 static const cdac_t dabase_large[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 static const cdac_t dabase_small[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-int dautos( cdac_t *dst, size_t size, udam_t val, size_t base, bool small ) {
+int dautos( cdac_t *dst, size_t upto, udam_t val, size_t base, bool small ) {
 	const cdac_t *txt = small ? dabase_small : dabase_large;
-	size_t i = 0, len = size - 1;
+	size_t i = 0, len = upto - 1;
 	cdac_t *tmp = &dst[len];
 	if ( base < 2 || base > strlen(txt) ) goto dautos_range;
 	for ( ; val > 0 && tmp >= dst; --tmp ) {
@@ -17,27 +17,20 @@ int dautos( cdac_t *dst, size_t size, udam_t val, size_t base, bool small ) {
 	if ( i > 0 ) goto dautos_nomem;
 	return 0;
 	dautos_range:
-	memset( dst, 0, size );
+	memset( dst, 0, upto );
 	return ERANGE;
 	dautos_nomem:
-	memset( dst, 0, size );
+	memset( dst, 0, upto );
 	return ENOMEM;
 }
-int daitos( cdac_t *dst, size_t size, idam_t val, size_t base, bool small ) {
+int daitos( cdac_t *dst, size_t upto, idam_t val, size_t base, bool small ) {
 	if ( val < 0 ) {
 		*dst = '-';
-		++dst; --size;
+		++dst; --upto;
 		return ( val == IDAM_MIN )
-			? dautos( dst, size, val, base, small )
-			: dautos( dst, size, -val, base, small );
-	} return dautos( dst, size, val, base, small );
-}
-int dasncat( cdac_t *dst, const cdac_t *src, size_t size, cdac_t **end ) {
-	cdac_t *e = strncat( dst, src, size );
-	int result = e ? 0 : errno;
-	if ( !e ) errno = 0;
-	if ( end ) *end = e;
-	return result;
+			? dautos( dst, upto, val, base, small )
+			: dautos( dst, upto, -val, base, small );
+	} return dautos( dst, upto, val, base, small );
 }
 int dasmatch( const cdac_t *str, const cdac_t *txt, size_t upto ) {
 	size_t i = 0, len = strlen(txt);
@@ -52,63 +45,177 @@ static const size_t U2_LIM = 3;
 static const size_t U4_LIM = 7;
 static const size_t U2_LIM = 5;
 #endif
-size_t dasncpy32( cdac_t *str, const cda32_t *txt, size_t upto ) {
-	size_t i = 0, done;
-	if ( !str || !txt || !upto ) return EINVAL;
+/* Very useful reference
+https://www.ibm.com/developerworks/library/l-linuni/index.html
+*/
+const size_t CDAM_MAX_BIT = IDAC_BIT - 2;
+/* Account for '\0' also */
+const size_t CDAM_MAX_LEN = (32/(IDAC_BIT - 2)) + (IDAC_BIT>=8 ? 2 : 3);
+int dalctoc( cdac_t *dst, size_t upto, unsigned long c32, size_t *done ) {
+	size_t i = 0, bits = 0, bytes = 0;
+	unsigned long bit = IDAL_MIN, rec;
+	if ( !dst || upto < CDAM_MAX_LEN
+#if UDAL_MAX >= 0xFFFFFFFFUL
+	|| c32 > 0xFFFFFFFFUL
+#endif
+	) {
+		if ( done ) *done = 0;
+		return 1;
+	}
+	memset( dst, 0, CDAM_MAX_LEN );
+	if ( c32 <= IDAC_MAX ) {
+		*dst = (cdac_t)c32;
+		if ( done ) *done = 1;
+		return 0;
+	}
+	for ( ; !(bit & c32); bit >>= 1 );
+	rec = bit;
+	for ( ; bit; bit >>= 1, ++bits );
+	bytes = (bits / CDAM_MAX_BIT) + ((bits % CDAM_MAX_BIT) ? 1 : 0);
+	bit = IDAC_MIN;
+	for ( ; bytes; --bytes ) {
+		bit >>= 1;
+		dst[i] |= bit;
+		if ( (udac_t)(dst[i]) == UDAC_MAX ) {
+			++i;
+			bit = IDAC_MIN;
+		}
+	}
+	for ( ; i < CDAM_MAX_LEN && c32; ++i ) {
+		for ( ; c32 && bit; c32 <<= 1 ) {
+			if ( c32 & rec ) {
+				dst[i] |= (cdac_t)bit;
+			}
+		}
+		bit = IDAL_MIN;
+		bit >>= 2;
+	}
+	if ( done ) *done = i;
+	return 0;
+}
+int dasncpy32( cdac_t *dst, size_t upto, const cda32_t *txt, size_t *done ) {
+	int ret = 0;
+	size_t i = 0, used = 0, left = upto;
+	if ( !dst || !txt || !upto ) {
+		if ( done ) *done = 0;
+		return 1;
+	}
 	for ( ; *txt; ++txt ) {
-		if (
-			( *txt > CDA16_MAX && upto < U4_LIM ) ||
-			( *txt > CDAC_MAX && upto < U2_LIM )
-		) return ENOMEM;
-		done = c32rtomb( str, *txt, NULL );
-		i += done;
-		/* Indicate failure to copy whole txt */
-		if ( i >= upto ) return 0;
-		str = &str[done];
+		if ( (ret = dalctoc( &(dst[i]), left, *txt, &used )) != 0 ) {
+			if ( done ) *done = i;
+			return ret;
+		}
+		i += used;
+		left -= used;
 	}
-	return i;
+	if ( done ) *done = i;
+	return 0;
 }
-size_t dasncpy16( cdac_t *str, const cda16_t *txt, size_t upto ) {
-	size_t i = 0, done;
-	if ( !str || !txt || !upto ) return EINVAL;
-	for ( ; *txt; ++txt, --upto ) {
-		if ( *txt > CDAC_MAX && upto < U2_LIM ) return ENOMEM;
-		done = c16rtomb( str, *txt, NULL );
-		i += done; upto -= done;
-		/* Indicate failure to copy whole txt */
-		if ( i >= upto ) return 0;
-		str = &str[done];
+int dasncpy16(
+	cdac_t *dst, size_t upto, const cda16_t *txt, size_t *done ) {
+	int ret = 0;
+	size_t i = 0, used = 0, left = upto;
+	if ( !dst || !txt || !upto ) {
+		if ( done ) *done = 0;
+		return 1;
 	}
-	return i;
+	for ( ; *txt; ++txt ) {
+		if ( (ret = dalctoc( &(dst[i]), left, *txt, &used )) != 0 ) {
+			if ( done ) *done = i;
+			return ret;
+		}
+		i += used;
+		left -= used;
+	}
+	if ( done ) *done = i;
+	return 0;
 }
-size_t dasncpyw( cdac_t *str, const cdaw_t  *txt, size_t upto ) {
+int dasncpyw( cdac_t *dst, size_t upto, const cdaw_t  *txt, size_t *done ) {
 #if CDAW_MAX == CDA16_MAX
-	return dasncpy16( str, (cda16_t*)txt, upto );
+	return dasncpy16( dst, upto, (cda16_t*)txt, done );
 #else
-	return dasncpy32( str, (cda32_t*)txt, upto );
+	return dasncpy32( dst, upto, (cda32_t*)txt, done );
 #endif
 }
-size_t dasncat32( cdac_t *str, cda32_t *txt, size_t upto ) {
-	size_t len = 0;
-	if ( !str ) return 0;
-	while ( *str ) { ++len; if (len >= upto) { return 0; } }
-	return dasncpy32( &str[len], txt, upto - len );
+int dasncpy( cdac_t *dst, size_t upto, const cdac_t *txt, size_t *done ) {
+	size_t i = 0;
+	if ( !dst || !txt || !upto ) {
+		if ( done ) *done = 0;
+		return 1;
+	}
+	for ( ; *txt; ++dst, ++txt, ++i ) {
+		if ( i >= upto ) {
+			if ( done ) *done = i;
+			return 2;
+		}
+		*dst = *txt;
+	}
+	if ( done ) *done = i;
+	return 0;
 }
-size_t dasncat16( cdac_t *str, cda16_t *txt, size_t upto ) {
+int dasncat32(
+	cdac_t *dst, size_t upto, const cda32_t *txt, size_t *done ) {
 	size_t len = 0;
-	if ( !str ) return 0;
-	while ( *str ) { ++len; if (len >= upto) { return 0; } }
-	return dasncpy16( &str[len], txt, upto - len );
+	if ( !dst || !upto) {
+		if ( done ) *done = 0;
+		return 1;
+	}
+	for ( ; dst[len]; ++len ) {
+		if (len >= upto) {
+			if ( done ) *done = 0;
+			return 2;
+		}
+	}
+	return dasncpy32( &dst[len], upto - len, txt, done );
 }
-size_t dasncatw( cdac_t *str, cdaw_t  *txt, size_t upto ) {
+int dasncat16(
+	cdac_t *dst, size_t upto, const cda16_t *txt, size_t *done ) {
 	size_t len = 0;
-	if ( !str ) return 0;
-	while ( *str ) { ++len; if (len >= upto) { return 0; } }
+	if ( !dst || !upto ) {
+		if ( done ) *done = 0;
+		return 1;
+	}
+	for ( ; dst[len]; ++len ) {
+		if (len >= upto) {
+			if ( done ) *done = 0;
+			return 2;
+		}
+	}
+	return dasncpy16( &dst[len], upto - len, txt, done );
+}
+int dasncatw(
+	cdac_t *dst, size_t upto, const cdaw_t  *txt, size_t *done ) {
+	size_t len = 0;
+	if ( !dst || !upto) {
+		if ( done ) *done = 0;
+		return 1;
+	}
+	for ( ; dst[len]; ++len ) {
+		if (len >= upto) {
+			if ( done ) *done = 0;
+			return 2;
+		}
+	}
 #if CDAW_MAX == CDA16_MAX
-	return dasncpy16( str, (cda16_t*)txt, upto );
+	return dasncpy16( &dst[len], upto - len, (cda16_t*)txt, done );
 #else
-	return dasncpy32( str, (cda32_t*)txt, upto );
+	return dasncpy32( &dst[len], upto - len, (cda32_t*)txt, done );
 #endif
+}
+int dasncat(
+	cdac_t *dst, size_t upto, const cdac_t *txt, size_t *done ) {
+	size_t len = 0;
+	if ( !dst || !upto) {
+		if ( done ) *done = 0;
+		return 1;
+	}
+	for ( ; dst[len]; ++len ) {
+		if (len >= upto) {
+			if ( done ) *done = 0;
+			return 2;
+		}
+	}
+	return dasncpy( &dst[len], upto - len, txt, done );
 }
 #define DAFORMAT_C	0x1
 #define DAFORMAT_S	0x2
@@ -131,11 +238,7 @@ typedef struct daformat {
 } daformat_t;
 /* Prevents accidentally breaking loop */
 int _dasnprintfv_getarg(
-	cdac_t *dst,
-	size_t size,
-	daformat_t *f, 
-	va_list list
-) {
+	cdac_t *dst, size_t upto, daformat_t *f, va_list list ) {
 	size_t len = strlen(f->text);
 	int result = 0;
 	if (dasmatch(f->text,"c",len)==1) f->info = DAFORMAT_C;
@@ -196,31 +299,31 @@ int _dasnprintfv_getarg(
 	}
 	switch ( f->type ) {
 	case 'c':
-		if ( size < U4_LIM ) return ENOMEM;
+		if ( upto < U4_LIM ) return ENOMEM;
 		if ( f->imax < CDA32_MIN || f->imax > CDA32_MAX ) return ERANGE;
-		c32rtomb( dst, (cda32_t)f->imax, NULL );
+		dalctoc( dst, upto, (cda32_t)f->imax, NULL );
 		break;
-	case 'B': result = dasncat( dst, f->umax ? "true" : "false", size, NULL );
+	case 'B': result = dasncat( dst, upto, f->umax ? "true" : "false", NULL );
 		break;
 	case 'i':
-	case 'd': result = daitos( dst, size, f->imax, 10, false );	break;
-	case 'b': result = dautos( dst, size, f->umax, 2, false );	break;
-	case 'o': result = dautos( dst, size, f->umax, 8, false );	break;
-	case 'u': result = dautos( dst, size, f->umax, 10, false );	break;
-	case 'x': result = dautos( dst, size, f->umax, 16, true );	break;
-	case 'X': result = dautos( dst, size, f->umax, 16, false );	break;
+	case 'd': result = daitos( dst, upto, f->imax, 10, false );	break;
+	case 'b': result = dautos( dst, upto, f->umax, 2, false );	break;
+	case 'o': result = dautos( dst, upto, f->umax, 8, false );	break;
+	case 'u': result = dautos( dst, upto, f->umax, 10, false );	break;
+	case 'x': result = dautos( dst, upto, f->umax, 16, true );	break;
+	case 'X': result = dautos( dst, upto, f->umax, 16, false );	break;
 	case 's':
 		if ( f->info == DAFORMAT_U4 )
-			result = (dasncat32( dst, va_arg( list, cda32_t* ), size ))
+			result = (dasncat32( dst, upto, va_arg( list, cda32_t* ), NULL ))
 			? 0 : ENOMEM;
 		else if ( f->info == DAFORMAT_U2 )
-			result = (dasncat16( dst, va_arg( list, cda16_t* ), size ))
+			result = (dasncat16( dst, upto, va_arg( list, cda16_t* ), NULL ))
 			? 0 : ENOMEM;
 		else if ( f->info == DAFORMAT_L )
-			result = (dasncatw( dst, va_arg( list, cdaw_t* ), size ))
+			result = (dasncatw( dst, upto, va_arg( list, cdaw_t* ), NULL ))
 			? 0 : ENOMEM;
 		else
-			result = (dasncat( dst, va_arg( list, cdac_t* ), size, NULL ))
+			result = (dasncat( dst, upto, va_arg( list, cdac_t* ), NULL ))
 			? 0 : ENOMEM;
 		break;
 	}
@@ -229,14 +332,14 @@ int _dasnprintfv_getarg(
 }
 int dasnprintfv(
 	cdac_t *dst,
-	size_t size,
+	size_t upto,
 	const cdac_t *format,
 	va_list list
 )
 {
 	int c, result = 0, m = 0;
-	size_t i = 0, len = size - 1;
-	bool chk = 0, set = 0;
+	size_t i = 0, len = upto - 1;
+	udab_t chk = 0, set = 0;
 	daformat_t f;
 	/* Now we read our format & arguments */
 	for (;(c = *format) && i < len;++format) {
@@ -245,7 +348,7 @@ int dasnprintfv(
 			case '%':
 			{
 				*dst++ = c;
-				--size; ++i;
+				--upto; ++i;
 				chk = 0;
 				continue;
 			}
@@ -270,10 +373,10 @@ int dasnprintfv(
 				set = 1;
 			}
 			if ( set ) {
-				result = _dasnprintfv_getarg( dst, size, &f, list );
+				result = _dasnprintfv_getarg( dst, upto, &f, list );
 				if ( result != 0 ) { return result; }
 				len = strlen(dst);
-				i += len; size -= len;
+				i += len; upto -= len;
 				dst = &dst[len];
 				set = 0;
 			}
@@ -288,14 +391,14 @@ int dasnprintfv(
 }
 int dasnprintf(
 	cdac_t *dst,
-	size_t size,
+	size_t upto,
 	const cdac_t *format,
 	...
 ) {
 	int result;
 	va_list list;
 	va_start( list, format );
-	result = dasnprintfv( dst, size, format, list );
+	result = dasnprintfv( dst, upto, format, list );
 	va_end( list );
 	return result;
 }

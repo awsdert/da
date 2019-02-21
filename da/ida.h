@@ -98,21 +98,24 @@ typedef UINT64 udal64_t;
 #define _DAVARIS( TXT, VAR ) DAMSG( TXT " = " #VAR )
 #define DAVARIS( VAR ) _DAVARIS( #VAR, VAR )
 
+#define _UDAVAL( VAL ) VAL##U
+#define UDAVAL( VAL ) _UDAVAL( VAL )
+
 /* Try compiler predefines first */
 #ifdef __CHAR_BIT__
 #define IDAC_BIT __CHAR_BIT__
 #define IDAC_MAX __SCHAR_MAX__
 #define IDAC_MIN ((-__SCHAR_MAX__)-1)
-#define UDAC_MAX ((__SCHAR_MAX__##U * 2) + 1)
+#define UDAC_MAX ((UDAVAL(__SCHAR_MAX__) * 2) + 1)
 #define IDAS_MAX __SHRT_MAX__
 #define IDAS_MIN ((-__SHRT_MAX__)-1)
-#define UDAS_MAX ((__SHRT_MAX__##U * 2) + 1)
+#define UDAS_MAX ((UDAVAL(__SHRT_MAX__) * 2) + 1)
 #define IDAI_MAX __INT_MAX__
 #define IDAI_MIN ((-__INT_MAX__)-1)
-#define UDAI_MAX ((__INT_MAX__##U * 2) + 1)
+#define UDAI_MAX ((UDAVAL(__INT_MAX__) * 2) + 1)
 #define IDAL_MAX __LONG_MAX__
 #define IDAL_MIN ((-__LONG_MAX__)-1)
-#define UDAL_MAX ((__LONG_MAX__##U * 2) + 1)
+#define UDAL_MAX ((UDAVAL(__LONG_MAX__) * 2) + 1)
 /* Check for fixed scenarios */
 #elif defined( DA_OS_LLP64 ) || defined( DA_OS_ILP64 ) \
 	|| defined( DA_OS_ILP32 ) || defined( DA_OS_LP64 ) \

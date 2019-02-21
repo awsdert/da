@@ -64,7 +64,7 @@ typedef udal32_t cda32_t;
 #define CHAR32_MAX UDAL32_MAX
 #define CHAR32_MIN 0
 #endif
-
+extern const size_t CDAM_MAX_LEN;
 /** @param max is max number of characters to check
 @return -1 if initial portion of str did not match txt
 @return 0 if both strings match
@@ -72,37 +72,28 @@ typedef udal32_t cda32_t;
 @return 2 reached maximum characters to compare
 **/
 int dasmatch( const char *str, const char *txt, size_t max );
+int dasncpy(
+	cdac_t *dst, size_t upto, const cdac_t *txt, size_t *done );
+int dasncpyw(
+	cdac_t *dst, size_t upto, const cdaw_t *txt, size_t *done );
+int dasncpy16(
+	cdac_t *dst, size_t upto, const cda16_t *txt, size_t *done );
+int dasncpy32(
+	cdac_t *dst, size_t upto, const cda32_t *txt, size_t *done );
 int dasncat(
-	cdac_t *dst,
-	const cdac_t *src,
-	size_t size,
-	char **end
-);
+	cdac_t *dst, size_t upto, const cdac_t *txt, size_t *done );
+int dasncatw(
+	cdac_t *dst, size_t upto, const cdaw_t *txt, size_t *done );
+int dasncat16(
+	cdac_t *dst, size_t upto, const cda16_t *txt, size_t *done );
+int dasncat32(
+	cdac_t *dst, size_t upto, const cda32_t *txt, size_t *done );
 int daftoa(
-	cdac_t *dst,
-	size_t size,
-	idam_t val,
-	size_t base,
-	bool small
-);
+	cdac_t *dst, size_t upto, fdam_t val, size_t base, bool small );
 int dautoa(
-	cdac_t *dst,
-	size_t size,
-	udam_t val,
-	size_t base,
-	bool small
-);
+	cdac_t *dst, size_t upto, udam_t val, size_t base, bool small );
 int daitoa(
-	cdac_t *dst,
-	size_t size,
-	idam_t val,
-	size_t base,
-	bool small
-);
+	cdac_t *dst, size_t upto, idam_t val, size_t base, bool small );
 int dasnprintf(
-	cdac_t *dst,
-	size_t size,
-	const cdac_t *format,
-	...
-);
+	cdac_t *dst, size_t upto, const cdac_t *format, ... );
 #endif
